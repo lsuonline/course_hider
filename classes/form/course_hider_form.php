@@ -150,8 +150,6 @@ class course_hider_form extends \moodleform {
         // The button can either be Save or Update for the submit action.
         $mform->addElement('html', '<hr>');
         
-        $thissubmitbutton = $formupdating ? get_string('savechanges', 'block_course_hider') : get_string('savesampleform', 'block_course_hider');
-
         $buttons = [
             $mform->createElement('submit', 'preview', get_string('previewquery', 'block_course_hider')),
             $mform->createElement('submit', 'execute', get_string('executequery', 'block_course_hider')),
