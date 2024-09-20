@@ -104,6 +104,9 @@ class form_controller {
         $updatecount = 0;
         $time_start = microtime(true);
 
+        if ($fdata->courses == "") {
+            return;
+        }
         // Show/Hide Courses
         // 2 - leave
         // 0 - hide
