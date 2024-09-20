@@ -30,12 +30,13 @@ $string['pluginname'] = 'Course Hider';
 $string['foldername'] = 'Course Hider Tools';
 $string['hidecourses'] = 'Hide Courses';
 $string['settings'] = 'Settings';
+$string['course_hider:admin'] = 'Configure the Course Hider plugin';
 
 // Settings.
 $string['formoptionsheader'] = 'Form Options.';
 
 // Section Titles.
-$string['coursehidetitle'] = 'Course Hider TooL';
+$string['coursehidetitle'] = 'Course Hider Tool';
 $string['updatechform'] = 'Course Hider Update';
 
 // Navbar.
@@ -48,6 +49,8 @@ $string['ch_heading_id'] = 'Course Id';
 $string['ch_heading_fullname'] = 'Fullname';
 $string['ch_heading_shortname'] = 'Shortname';
 $string['ch_heading_visible'] = 'Visible';
+$string['ch_heading_locked'] = 'Locked';
+$string['ch_heading_check'] = 'All/None';
 $string['ch_no_courses'] = 'No courses to display';
 
 // Notifications.
@@ -67,7 +70,9 @@ $string['semesterdesc'] = 'Comma seperated list of the different semesters. Ex: 
 $string['semestersection'] = 'Semester Section.';
 $string['semestersectiondesc'] = 'Comma seperated list of the different types of semester sections. Ex: Spring,Summer,Fall';
 
-$string['hiddenonly'] = 'Show hidden courses.';
+$string['hiddenonly'] = 'Preview hidden';
+$string['lockedonly'] = 'Preview locked';
+$string['lockcourses'] = 'Lock courses';
 
 $string['defaultyear'] = 'Choose a year';
 $string['defaultyear2'] = 'Year';
@@ -79,7 +84,9 @@ $string['defaultsemestersection'] = 'Choose a session';
 $string['defaultsemestersection2'] = 'Session';
 
 $string['raw_input'] = 'Raw Text';
-$string['raw_input_desc'] = 'Leave this blank if you are not going to use it. <br>It is highly recommended'.
-	' that you preview the raw text before you execute!';
+$string['raw_input_desc'] = 'Leave the "Raw Text" area blank if you are not going to use it.';
 $string['previewquery'] = 'Preview';
 $string['executequery'] = 'Execute';
+
+$string['previewsettings'] = 'Search Settings';
+$string['updatesettings'] = 'Update Settings';

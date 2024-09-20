@@ -54,6 +54,18 @@ if (isset($pageparams['vpreview']) && $pageparams['vpreview'] == 1) {
     // Ok then, we are looking at the FORM.
     $viewpreview = true;
 }
+
+$results = null;
+
+if ( isset($_REQUEST['btnexecute'])) {
+    error_log("\n Yup, going through here");
+    $pageparams['btnexecute'] = true;
+    $results = (object) array(
+        "courses" => $_REQUEST['courses'],
+        "lock" => (int)$_REQUEST['lock'],
+        "hide" => (int)$_REQUEST['hide']
+    );
+}
 // ------------------------------------------------------------------------
 // If we want to push any data to javascript then we can add it here.
 // $initialload = array(
@@ -72,7 +84,6 @@ if (isset($pageparams['vpreview']) && $pageparams['vpreview'] == 1) {
 $PAGE->set_context($context);
 $PAGE->set_url($url);
 $PAGE->set_title($title);
-// $PAGE->set_heading($title);
 
 // Navbar Bread Crumbs.
 $PAGE->navbar->add(get_string('ch_dashboard', 'block_course_hider'), $CFG->wwwroot);
@@ -80,7 +91,8 @@ $PAGE->navbar->add(get_string('pluginname', 'block_course_hider'), new moodle_ur
 $PAGE->navbar->add(get_string('pluginname', 'block_course_hider'), new moodle_url('course_hider.php'));
 
 $PAGE->requires->css(new moodle_url($CFG->wwwroot . '/blocks/course_hider/style/main.css'));
-// $PAGE->requires->js_call_amd('block_course_hider/main', 'init');
+$jsparams = array();
+$PAGE->requires->js_call_amd('block_course_hider/main', 'init', $jsparams);
 
 $output = $PAGE->get_renderer('block_course_hider');
 
@@ -89,9 +101,9 @@ $toform = [
 ];
 $mform = new \block_course_hider\form\course_hider_form(null, $toform);
 
-    // Create/Update.
+// Create/Update.
 $fromform = $mform->get_data();
-$results = null;
+
 
 $worky = $worky ?? new \block_course_hider\controllers\form_controller();
 if ($mform->is_cancelled()) {
@@ -118,7 +130,7 @@ if ($pageparams['btnpreview'] == 1) {
     $renderable = new \block_course_hider\output\course_hider_view($results);
     echo $output->render($renderable);
     
-} else if ($pageparams['btnexecute'] == 1) {
+} else if ($pageparams['btnexecute'] == true) {
     $worky->execute_hider($results, $fromform);
 }
 

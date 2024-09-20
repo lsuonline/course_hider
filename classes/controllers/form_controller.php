@@ -38,15 +38,31 @@ class form_controller {
     public function process_form($params = false) {
         global $DB;
 
+        $showhidden = (isset($params->hiddenonly) && $params->hiddenonly == 2)
+            ? ''
+            : ' c.visible = ' . $params->hiddenonly . ' AND ';
+            
+        $showlocked = (isset($params->lockedonly) && $params->lockedonly == 2)
+            ? ''
+            : ' ctx.locked = ' . $params->lockedonly . ' AND ';
+
         // Check raw input field and use if there's stuff.
         if ($params->raw_input != "") {
-            // Store the partial for later use.
-            $this->partial = $params->raw_input;
-            $snippet = "SELECT * FROM {course} WHERE visible='1' AND ".
-                "shortname LIKE '".$params->raw_input." %'";
-        } else {
+            // Cleanse it.
+            $stripped = preg_replace('/;/', '', $params->raw_input);
+            $stripped = trim($stripped, ';');
+            $stripped = trim($stripped);
 
-            $showhidden = (isset($params->hiddenonly) && $params->hiddenonly == 1) ? '0' : '1';
+            // Store the partial for later use.
+            $this->partial = $stripped;
+            $snippet = "SELECT c.*, ctx.locked
+                FROM {course} c
+                INNER JOIN {context} ctx ON c.id = ctx.instanceid 
+                    AND" . $showlocked . $showhidden. " ctx.contextlevel = '50'
+                WHERE c.shortname LIKE '%" . $stripped . "%'
+                OR c.fullname LIKE '%" . $stripped . "%'";
+
+        } else {
 
             $years = \course_hider_helpers::getYears()[$params->ch_years] . " ";
             $semester = \course_hider_helpers::getSemester()[$params->ch_semester];
@@ -63,11 +79,16 @@ class form_controller {
 
             // Store the partial for later use.
             $this->partial = $years.$semtype.$semester.$section;
-            $snippet = "SELECT * FROM {course} WHERE visible=$showhidden AND ".
-                "shortname LIKE '".$this->partial." %'";
+            $snippet = "SELECT c.*, ctx.locked
+                FROM {course} c
+                INNER JOIN {context} ctx ON c.id = ctx.instanceid 
+                    AND" . $showlocked . $showhidden. " ctx.contextlevel = '50'
+                WHERE shortname LIKE '" . $this->partial . " %'";
         }
 
         $courses = $DB->get_records_sql($snippet);
+        $courses["lockme"] = $params->lockcourses;
+        $courses["hideme"] = $params->hidecourses;
 
         return $courses;
     }
@@ -78,37 +99,68 @@ class form_controller {
      * @param  array - the form data.
      * @return null
      */
-    public function execute_hider($courses = array(), $fdata = array()) {
+    public function execute_hider($fdata = array(), $formdata = array()) {
         global $DB, $CFG;
         $updatecount = 0;
         $time_start = microtime(true);
-        
-        if (isset($fdata->hiddenonly) && $fdata->hiddenonly == 1) {
-            // Execute on the hidden courses and make them visible.
-            $showhidden = '1';
-            $hiddentext = "visible";
-        } else {
-            // Execute on the visible courses and make them hidden.
-            $showhidden = '0';
-            $hiddentext = "hidden";
-        }
 
+        // Show/Hide Courses
+        // 2 - leave
+        // 0 - hide
+        // 1 - show
+
+        // Lock/Unlock Courses
+        // 2 - leave
+        // 0 - unlock
+        // 1 - lock
+        
+        $lockme = $fdata->lock;
+        $hideme = $fdata->hide;
+
+        $courses = explode(",", $fdata->courses);
         foreach($courses as $course) {
-            $dataobject = [
-                'id' => $course->id,
-                'visible' => $showhidden,
-            ];
             // Update the course to be hidden.
-            $result = $DB->update_record('course', $dataobject, $bulk = false);
-            $updatecount++;
-            mtrace("Course (".$course->id. "): <a href='".$CFG->wwwroot."/course/view.php?id=".$course->id."' target='_blank'>" .$course->shortname. " </a>has been updated to be ".$hiddentext.".<br>");
+            $dis_one = $DB->get_record('course', array('id' => $course));
+            if (isset($hideme) && $hideme < 2) {
+                $hideobject = [
+                    'id' => $course,
+                    'visible' => $hideme,
+                ];
+                $result = $DB->update_record('course', $hideobject, $bulk = false);
+                $hidetask = $hideme == 0 ? 'to be hidden' :  'to be visible';
+            } else {
+                $hidetask = '';
+            }
+
+            if (isset($lockme) && $lockme < 2) {
+                $sql =  'UPDATE {context} 
+                        SET locked = '.$lockme.'
+                        WHERE instanceid = '.$course.' AND contextlevel = "50"';
+
+                $locked = $DB->execute($sql);
+                $locktask = $lockme == 1 ? ' and was locked' : ' and was unlocked';
+            } else {
+                $locktask = '';
+            }
+
+            if ((isset($hideme) && $hideme < 2) || (isset($lockme) && $lockme < 2)) {
+                $updatecount++;
+                mtrace("Course (" . $course . "):
+                    <a href='" . $CFG->wwwroot . "/course/view.php?id=" . $course . "' target='_blank'>" . $dis_one->shortname . "</a>
+                    was updated " . $hidetask . $locktask . ".<br>");
+            } else {
+                mtrace("Course (" . $course . "):
+                    <a href='" . $CFG->wwwroot . "/course/view.php?id=" . $course . "' target='_blank'>" . $dis_one->shortname . "</a>
+                    has been left alone.<br>");
+
+            }
         }
         $time_end = microtime(true);
         if ($updatecount == 0) {
-            mtrace("<br><br>Ummmm......nothing was updated ya idiot!<br>");
+            mtrace("<br><br>Ummmm......nothing was updated.<br>");
         } else {
             $execution_time = $time_end - $time_start;
-            mtrace("A total of ". $updatecount. " courses have been hidden and took ". number_format($execution_time, 2). " seconds.<br>");
+            mtrace("A total of ". $updatecount. " courses have been hidden / locked and took ". number_format($execution_time, 2). " seconds.<br>");
         }
         
         mtrace("<br>--- Process Complete ---<br>");
